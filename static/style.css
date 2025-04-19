@@ -1,0 +1,9 @@
+body {
+    overflow: hidden;
+}
+
+@media not (pointer: coarse) {
+    math-field::part(virtual-keyboard-toggle) {
+      display: none;
+    }
+}
