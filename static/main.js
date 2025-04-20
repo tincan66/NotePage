@@ -41,6 +41,7 @@ var dragStartX;
 var dragStartY;
 
 var save_map = new Map();
+var img_scale_factor = .1;
 window.save_map = save_map;
 
 document.addEventListener('mousedown', function(event) {
@@ -122,9 +123,13 @@ document.addEventListener('keydown', function(event) {
             event.preventDefault();
             load();
         }
-    } else if(event.code === "ArrowDown") {
+    } else if(event.code == "ArrowDown") {
         if (document.activeElement.id.includes("image")) {
-            let width = document.get
+            document.activeElement.style.scale *= 1 - img_scale_factor;
+        }
+    } else if(event.code == "ArrowUp") {
+        if (document.activeElement.id.includes("image")) {
+            document.activeElement.style.scale *= 1 + img_scale_factor;
         }
     }
     //console.log(event);
@@ -185,7 +190,7 @@ function MathElement(x, y, idString, data) {
     mathField.setAttribute("isDraggable", "false");
 
     save_map.set(`mathContainer_${idString}`, div);
-    save_map.set(idString, [0, 0, null]); //x, y, value
+    save_map.set(idString, [x, y, data]); //x, y, value
 
     const object = new CSS3DObject(div);
     object.position.set(x, y, 0);
@@ -233,6 +238,7 @@ function imgElement(x, y, data, idString) {
     image.id = `imageElement_${idString}`;
     image.setAttribute("draggable", "false");
     image.setAttribute("tabindex", "0");
+    image.style.scale = 1;
 
     image.addEventListener('dblclick', function(event) {
         const doubleClickedElement = event.target;
@@ -241,7 +247,7 @@ function imgElement(x, y, data, idString) {
       });
 
     save_map.set(`imageContainer_${idString}`, div);
-    save_map.set(idString, [0, 0, null]);
+    save_map.set(idString, [x, y, data]);
 
     const object = new CSS3DObject(div);
 
@@ -272,6 +278,8 @@ function save() {
 
         const save_map_array = Array.from(save_map);
         const jsonString = JSON.stringify(save_map_array);
+
+        console.log(save_map_array);
 
         try {
             const handle = await window.showSaveFilePicker({
@@ -308,9 +316,14 @@ function load() {
                 save_map.delete(key);
             }
 
+            console.log(save_map)
+
             for (const [key, value] of importedMap) { 
                 save_map.set(key, value);
             }
+            console.log(save_map);
+
+            save_map = importedMap;
 
             // for (const [key, value] of save_map) {
             //     if(key.includes("mathContainer")) {
@@ -343,9 +356,18 @@ function populate() {
         } else if (key.includes("imageContainer")) {
             let id_string = key.split("_")[1];
             let data = save_map.get(id_string);
-            group.add(new imgElement(data[0], data[1], id_string, data[2]));
+            group.add(new imgElement(data[0], data[1], data[2], id_string));
         }
     }
+    group.children.forEach(object => {
+        let id_string = object.element.id.split('_')[1];
+        if(id_string == currentActiveElem.split('_')[1]) {
+            let temp_value = save_map.get(id_string);
+            temp_value[0] = object.position.x;
+            temp_value[1] = object.position.y;
+            save_map.set(id_string, temp_value);
+        }
+    });
 }
 
 function animate() {
